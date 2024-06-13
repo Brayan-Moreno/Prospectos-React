@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": [
+        "components/*"
+      ],
+      "@modules/*": [
+        "modules/*"
+      ],
+      "@hooks/*": [
+        "resources/hooks/*"
+      ],
+      "@constants/*": [
+        "resources/constants/*"
+      ],
+      "@utils": [
+        "resources/utils/index.js"
+      ],
+      "@snack": [
+        "resources/utils/snack.js"
+      ]
+    }
+  }
+}
