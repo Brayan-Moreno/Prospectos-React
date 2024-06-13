@@ -15,10 +15,10 @@
         "resources/constants/*"
       ],
       "@utils": [
-        "resources/utils/index.js"
+        "resources/Utils/index.js"
       ],
       "@snack": [
-        "resources/utils/snack.js"
+        "resources/Utils/snack.js"
       ]
     }
   }

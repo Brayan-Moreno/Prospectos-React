@@ -241,8 +241,6 @@ const scrollTop = () => {
 
 
 export const Utils = {
-  constants,
-  getCurrentModule,
   validateEmail,
   validateCellphone,
   isEmpty,
