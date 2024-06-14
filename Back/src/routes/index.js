@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const prospectRoutes = require("../routes/prospects.routes")
+const prospectRoutes = require("./prospect.routes")
 
-app.use("/api/prospects", prospectRoutes)
+app.use("/api/prospect", prospectRoutes)
 module.exports = app;

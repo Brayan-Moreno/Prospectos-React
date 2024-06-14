@@ -4,9 +4,9 @@ module.exports ={
 		url: "http://localhost:3001",
 	},
     sql_prospectos: {
-        server: "CROW-DESKTOP\\SQLBRAYAN",
         user: "sa",
         password: "Cinnamon03",
+        server: "localhost",
         database: "ProspectosBD",
     },
 }
