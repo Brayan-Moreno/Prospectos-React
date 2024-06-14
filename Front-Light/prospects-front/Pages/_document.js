@@ -12,8 +12,6 @@ const _document = () => {
 			</Head>
 			<body>
 				<Main />
-				{/* <script src="/es6-shim.js"></script>
-				<script src="/websdk.client.bundle.min.js"></script> */}
 				<NextScript />
 			</body>
 		</Html>

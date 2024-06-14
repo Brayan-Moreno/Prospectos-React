@@ -34,9 +34,6 @@ const MainLayout = ({ classes, ...props }) => {
             </Box>
           </Box>
          ) 
-        //: (
-        //   <Box sx={theme.main}>{props.children}</Box>
-        // )
         }
       </Box>
 

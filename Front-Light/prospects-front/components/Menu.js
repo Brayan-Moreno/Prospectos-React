@@ -15,22 +15,17 @@ import { useModule } from '@hooks/useModule'
 const ModulesMenu = [
   {
     id: 1,
-    url: '/add-prospects',
-    icon: 'promoter.svg',
+    url: '/prospects',
+    icon: 'applications.svg',
     name: 'Alta de prospectos'
   },
   {
     id: 2,
-    url: '/prospects',
-    icon: 'assign-promoter.svg',
-    name: 'Consulta de prospectos'
-  },
-  {
-    id: 3,
-    url: '/prospect-evaluate',
-    icon: 'promotor-group.svg',
+    url: '/prospects-evaluate',
+    icon: 'verify-application.svg',
     name: 'Evaluación de prospectos'
-  }
+  },
+  
 ]
 
 const Menu = () => {
@@ -40,21 +35,14 @@ const Menu = () => {
   const { set, clean } = useModule()
 
   const handleClick = (isHome = false, item) => {
-    if (item && item.name) {
+    if (item && item.name){
+      set(item.name)
     }
     if (isHome) {
       clean()
       router.push('/')
     } else {
-      if (item.subModules && item.subModules.length > 0) {
-        if (moduleExpanded === item.id) {
-          setModuleExpanded(null)
-        } else {
-          setModuleExpanded(item.id)
-        }
-      } else {
         router.push(`/${item.url}`)
-      }
     }
   }
 
@@ -89,7 +77,7 @@ const Menu = () => {
                     <img
                       src={`${window.location.origin}/icons/${item.icon}`}
                       alt="icon"
-                      style={item.id === moduleExpanded ? { width: '24px', color: '#243B7A' } : { filter: 'invert(100%)', width: '24px' }}
+                      style={item.id === moduleExpanded ? { width: '24px', color: 'white'} : { filter: 'invert(100%)', width: '24px' }}
                     />
                   </div>
                   <div style={{ width: '100%', textAlign: 'center' }}>
@@ -106,8 +94,7 @@ const Menu = () => {
         </ListItem>
       )
     }) 
-  }
-
+}
   return (
     <>
       <Drawer
