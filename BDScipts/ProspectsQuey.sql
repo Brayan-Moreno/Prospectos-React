@@ -21,10 +21,12 @@ values ('Enviado'), ('Autorizado'), ('Rechazado')
 
 go
 
+select * from sProspectos.Ctl_EstatusSolicitud
+
 create type sProspectos.Typ_ArchivosSolicitud as table(
 idSolicitud int not null,
 idArchivo int not null,
-datos varbinary(max) not null
+datos varchar(max) not null
 )
 
 go
@@ -49,7 +51,7 @@ go
 create table sProspectos.Archivos_Prospectos(
 Id Bigint primary key not null identity(1,1),
 IdTipoDocumento int not null foreign key references sProspectos.Ctl_Documentos(Id),
-Datos varbinary(max) not null,
+Datos varchar(max) not null,
 IdSolicitud int not null foreign key references sProspectos.Solicitudes(Id),
 FechaRegistro datetime not null default getdate(),
 Activo bit not null default 1
@@ -84,7 +86,6 @@ create proc sProspectos.SP_Solicitudes_Set
 @prtCodigoPostal nchar(5),
 @prtTelefono nchar(10),
 @prtRFC varchar(13),
-@type_Documentos_Solicitud sProspectos.Typ_ArchivosSolicitud readonly,
 @prtErrNumber int output,
 @prtErrDescrip varchar(255) output
 as
@@ -92,41 +93,24 @@ begin
 
 declare @s varchar(max)
 declare @Estatus_Solicitud_Pendiente int = 1
+declare @IdProspecto int = 0
 
 begin try
 
- if not exists (select 1 from @type_Documentos_Solicitud)
- begin
-  set @s = 'Suba por lo menos 1 archivo para continuar'
-  raiserror(@s,16,10)
- end--if
-
- if exists (select 1 from sProspectos.Archivos_Prospectos ap (nolock)
-			left join @type_Documentos_Solicitud t on t.idSolicitud = ap.IdSolicitud and t.idSolicitud is null
-			where ap.Activo = 1)
- begin
-
-	delete p
-	from sProspectos.Archivos_Prospectos p
-	 inner join @type_Documentos_Solicitud s on s.idSolicitud = p.IdSolicitud and s.idSolicitud is null
-		 
- end--if
-
+ 
  begin tran
 
  insert sProspectos.Solicitudes (Nombre, ApellidoPaterno, ApellidoMaterno, Calle, NumeroExterior, NumeroInterior, Colonia,
 								 CodigoPostal, Telefono, Rfc, EstatusSolicitud)
  values (@prtNombre, @prtApellidoPaterno, @prtApellidoMaterno, @prtCalle, @prtNumeroExterior, @prtNumeroInterior, @prtColonia,
 		 @prtCodigoPostal, @prtTelefono, @prtRFC, @Estatus_Solicitud_Pendiente)
-
-
- insert sProspectos.Archivos_Prospectos (IdSolicitud, IdTipoDocumento, Datos)
- select tp.idSolicitud, tp.idArchivo, tp.datos 
- from @type_Documentos_Solicitud tp
+		 
+ set @IdProspecto = SCOPE_IDENTITY()
 
  commit tran
 
- set @prtErrNumber = 0
+
+ set @prtErrNumber = @IdProspecto
  set @prtErrDescrip = 'Prospecto guardado con éxito.'
 
 end try
@@ -141,6 +125,123 @@ begin catch
  set @prtErrNumber = -1
  set @prtErrDescrip = ERROR_MESSAGE()
 end catch
+end--proc
+
+go
+create proc sProspectos.SP_ArchivosProspecto_Set
+@prtIdProspecto int,
+@type_Documentos_Solicitud sProspectos.Typ_ArchivosSolicitud readonly,
+@prtErrNumber int output,
+@prtErrDescrip varchar(255) output
+as
+begin
+
+
+declare @s varchar(255)
+begin try
+
+ if not exists (select 1 from @type_Documentos_Solicitud)
+  begin
+   set @s = 'Suba por lo menos 1 archivo para continuar'
+   raiserror(@s,16,10)
+  end--if
+
+
+  begin tran
+
+   if exists (select 1 from sProspectos.Archivos_Prospectos ap (nolock)
+			 left join @type_Documentos_Solicitud t on t.idSolicitud = ap.IdSolicitud and t.idSolicitud is null
+			  where ap.Activo = 1)
+	 begin
+
+	  delete p
+	  from sProspectos.Archivos_Prospectos p
+	    inner join @type_Documentos_Solicitud s on s.idSolicitud = p.IdSolicitud and s.idSolicitud is null
+		 
+   end--if
+
+   insert sProspectos.Archivos_Prospectos (IdSolicitud, IdTipoDocumento, Datos)
+   select tp.idSolicitud, tp.idArchivo, tp.datos 
+   from @type_Documentos_Solicitud tp
+
+ commit tran
+
+ set @prtErrNumber = 0
+ set @prtErrDescrip = 'Documentos guardados con éxito.'
+
+
+end try
+
+begin catch
+
+if @@TRANCOUNT > 0
+begin
+ rollback tran
+end--if
+
+ set @prtErrNumber = -1
+ set @prtErrDescrip = ERROR_MESSAGE()
+
+end catch
+
+end--proc
+
+go
+
+create proc sProspectos.SP_ArchivosProspecto_Get
+@prtIdProspecto int
+as
+begin
+
+ select ap.Id, ap.IdSolicitud as ProspectoId, ctl.Descripcion as TipoArchivo,
+ ap.Datos
+ from 
+ sProspectos.Archivos_Prospectos ap (nolock)
+	inner join sProspectos.Ctl_Documentos ctl (nolock) on ctl.Id = ap.IdTipoDocumento and ap.Activo = 1
+ where ap.IdSolicitud = @prtIdProspecto
+
+end--proc
+
+go
+
+create proc sProspectos.SP_EstatusProspecto_Set
+@prtIdProspecto int,
+@prtIdStatus int,
+@prtObservaciones varchar(255) = null,
+@prtErrNumber int output,
+@prtErrDescrip varchar(255) output
+as
+begin
+
+begin try
+
+
+begin tran
+
+ update s set 
+ s.EstatusSolicitud = @prtIdStatus,
+ s.Observaciones = case when s.Observaciones is null then @prtObservaciones else s.Observaciones end
+ from sProspectos.Solicitudes s
+ where s.Id = @prtIdProspecto
+
+ set @prtErrNumber = 0
+ set @prtErrDescrip = 'Prospecto actualizado con éxito'
+
+commit tran
+
+end try
+begin catch
+
+ if @@TRANCOUNT > 0
+ begin
+	rollback tran
+ end--if
+
+ set @prtErrNumber = -1
+ set @prtErrDescrip = ERROR_MESSAGE()
+
+end catch
+
 end--proc
 
 

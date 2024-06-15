@@ -19,21 +19,36 @@ import {
   Button,
   Typography,
   TextField,
+  TableContainer,
+  TableRow,
+  TableCell,
+  TableBody,
+  TableHead,
+  Table,
+  Paper,
 } from '@mui/material'
+
+import VisibilityIcon from '@mui/icons-material/Visibility'
+
+import { VisuallyHiddenInput, VisuallyFile } from '@components/FileUploader/styledComponents'
+
+import AddCircleIcon from '@mui/icons-material/AddCircle'
 
 //Components
 import { useFormik } from 'formik'
 //API
-
+import { prospectsApi } from 'api/prospects/prospects.api'
 //Resource
 import Snack from '@snack'
 
 const ProspectsAdd = () => {
   const [cancel, setCancel] = useState([])
   const [value, setValue] = useState(0)
-  const [document, setDocument] = useState([])
+  const [documents, setDocuments] = useState([])
   const [filteredDocuments, setFilteredDocuments] = useState([])
   const [showModalConfirm, setShowModalConfirm] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState([])
+  const [loadedList, setLoadedList] = useState(false)
 
   const router = useRouter()
   const { id } = router.query
@@ -79,6 +94,14 @@ const ProspectsAdd = () => {
     // },
   })
 
+  const setProspect = async (values) => {
+    open()
+    try {
+    } catch (error) {
+      Snack.error(error.message)
+    }
+    close()
+  }
   function CustomTabPanel(props) {
     const { children, value, index, ...other } = props
     return (
@@ -108,22 +131,89 @@ const ProspectsAdd = () => {
     setShowModalConfirm(!showModalConfirm)
   }
 
-  const handleChange = async (idFiles) => {
-    const files = idFiles.map((f) => {
-      return {
-        id: formik.values.id,
-      }
-    })
-    // const response = await workApplicationApi.createDocumentation(files)
-    // if (response.success) {
-    //   Snack.success('Se guardó con éxito')
-    //   setFilesUploaded(true)
-    // } else {
-    //   Snack.error(response.message)
-    // }
+  const recoverFiles = (files) => {
+    let filesList = [...files]
+    setDocuments(filesList)
   }
-  const handleUploadSuccess = () => {
-    setFilesUploaded(true)
+
+
+  const handleFileChange = async (e) => {
+    const reader = new FileReader()
+    let file = e.target.files[0]
+    const { id, name } = e.target
+
+    const maxSize = 5 * 1024 * 1024
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
+
+    if (!file) {
+      return
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      return
+    }
+
+    if (file.size > maxSize) {
+      e.target.value = ''
+      return
+    }
+
+    reader.onloadend = (e) => {
+      const data = e.target.result
+      file = {
+        data,
+        idTypeDocument: Number(id),
+        fileName: file.name,
+        type: file.type,
+      }
+      const list = [...uploadedFiles, file]
+      setUploadedFiles(list)
+      setLoadedList(!loadedList)
+    }
+
+
+    reader.readAsDataURL(file)
+    }
+  const renderInput = (reg) => {
+    return (
+      <>
+
+        <Button
+            component="label"
+            startIcon={<VisibilityIcon />}
+            target="_blank"
+          >
+            <VisuallyFile
+              onClick={() => renderOpenFile(reg)}
+            />
+          </Button>
+      </>
+    )
+  }
+
+  const renderOpenFile = (file) => {
+    var pdfData = file.data
+    var w = window.open('')
+    if (w) {
+      w.document.write(
+        `<embed width="100%" height="100%" src="${pdfData}" type=${file.type} />`
+      )
+    }
+  }
+
+  const renderCells = (reg) => {
+    const arreglo = []
+      // Verifica si el objeto tiene la propiedad 'fileName'
+      if (reg.hasOwnProperty('fileName')) {
+        // Agrega la celda al arreglo utilizando JSX (React)
+        arreglo.push(
+          <TableCell key={reg.fileName}>
+            {reg.fileName} {/* Mostrar el nombre del archivo u otro contenido */}
+          </TableCell>
+        );
+      }
+    return arreglo
   }
 
   let fileUploaderComponent = null
@@ -133,8 +223,7 @@ const ProspectsAdd = () => {
         <FileUploader
           headers={['Adjuntar archivos']}
           list={listDocuments}
-          handleChange={handleChange}
-          handleUploadSuccess={handleUploadSuccess}
+          recoverFiles={recoverFiles}
         />
       </CustomTabPanel>
     </>
@@ -172,7 +261,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="name"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.name}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.name && formik.errors.name)}
@@ -186,7 +275,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="firstLastName"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.firstLastName}
               onChange={formik.handleChange}
               error={Boolean(
@@ -204,7 +293,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="secondLastName"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.secondLastName}
               onChange={formik.handleChange}
               error={Boolean(
@@ -222,7 +311,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="phone"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.phone}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.phone && formik.errors.phone)}
@@ -236,7 +325,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="rfc"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.rfc}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.rfc && formik.errors.rfc)}
@@ -256,7 +345,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="zipCode"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.zipCode}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.zipCode && formik.errors.zipCode)}
@@ -270,7 +359,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="colony"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.colony}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.colony && formik.errors.colony)}
@@ -284,7 +373,7 @@ const ProspectsAdd = () => {
               size="small"
               variant="outlined"
               name="street"
-              disabled ={loadStatus}
+              disabled={loadStatus}
               value={formik.values.street}
               onChange={formik.handleChange}
               error={Boolean(formik.touched.street && formik.errors.street)}
@@ -298,7 +387,46 @@ const ProspectsAdd = () => {
             </Typography>
           </Grid>
 
-          <Box sx={{ width: '100%' }}>{fileUploaderComponent}</Box>
+          <Box sx={{ width: '100%' }}>
+            <>
+              <Grid container xs={12} justifyContent={'end'}>
+                <Button component="label" startIcon={<AddCircleIcon />}>
+                  <VisuallyHiddenInput
+                    type="file"
+                    onChange={(e) => handleFileChange(e)}
+                    accept=".pdf, .doc, .docx, .txt, .jpg, .jpeg, .png"
+                  />
+                </Button>
+              </Grid>
+              <TableContainer
+                component={Paper}
+                sx={{ borderRadius: '16px', marginTop: 'auto' }}
+              >
+                <Table sx={{ minWidth: '450px' }} size="small">
+                  <TableHead
+                    sx={{
+                      backgroundColor: '#F4F5F7',
+                      height: '40px',
+                      width: '100%',
+                    }}
+                  ></TableHead>
+                  <TableBody>
+                    {uploadedFiles.map((reg, i) => (
+                      <TableRow key={reg.id}>
+                        {renderCells(reg)}
+                        {(
+                          <TableCell align="right">
+                            {renderInput(reg)}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <div style={{ textAlign: 'right' }}></div>
+            </>
+          </Box>
 
           {!loadStatus && (
             <Grid container mt={2} justifyContent={'right'}>

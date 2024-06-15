@@ -2,7 +2,7 @@ import { api } from 'api/request'
 
 const BASE_URL = '/prospect'
 
-export const prospect = {
+export const prospectsApi = {
     getProspect: async () =>{
         return await api({
             method: 'GET',
@@ -31,5 +31,3 @@ export const prospect = {
     },
     
 }
-
-export default prospectApi

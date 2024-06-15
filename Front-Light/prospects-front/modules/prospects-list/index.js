@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 
 import { useRouter } from 'next/router'
@@ -31,16 +31,18 @@ import {
   IconButton,
 } from '@mui/material'
 
-import AddCircleIcon from '@mui/icons-material/AddCircle';
+import AddCircleIcon from '@mui/icons-material/AddCircle'
 
 //Components
 import { useFormik } from 'formik'
+
+//Api
+import { prospectsApi } from 'api/prospects/prospects.api'
 
 //Resource
 import Snack from '@snack'
 
 const ProspectsList = () => {
-
   const [prospects, setProspects] = useState([])
   const [selectedProspect, setSelectedProspect] = useState(null)
   const [page, setPage] = useState(1)
@@ -61,6 +63,27 @@ const ProspectsList = () => {
   const handleClick = (event, id) => {
     setSelectedIndex(id)
     setAnchorEl(event.target)
+  }
+
+  useEffect(() => {
+    prospectsGet()
+  }, [])
+
+  const prospectsGet = async () => {
+    open()
+    try {
+      const response = await prospectsApi.getProspect()
+      console.log(response, "response")
+      if (!response.success) {
+        Snack.error(response.message)
+      } else {
+        const prospects = [...response.data]
+        setProspects(prospects)
+      }
+    } catch (error) {
+      Snack.error(error.message)
+    }
+    close()
   }
 
   const renderActions = () => {
@@ -122,11 +145,16 @@ const ProspectsList = () => {
 
   return (
     <Grid container justifyContent={'space-between'} spacing={2}>
-        <Grid item container margin={2} justifyContent={'right'}>
-            <IconButton sx={{backgroundColor: 'primary'}} onClick={handleCreateProspect} variant='contained' aria-label='add'>
-                <AddCircleIcon color='primary' fontSize='large' />
-            </IconButton>
-        </Grid>
+      <Grid item container margin={2} justifyContent={'right'}>
+        <IconButton
+          sx={{ backgroundColor: 'primary' }}
+          onClick={handleCreateProspect}
+          variant="contained"
+          aria-label="add"
+        >
+          <AddCircleIcon color="primary" fontSize="large" />
+        </IconButton>
+      </Grid>
 
       <Grid item xs={12}>
         <FormControl
