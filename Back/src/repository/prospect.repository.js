@@ -82,10 +82,11 @@ const addDocumentsProspect = async (prosepctId, documents) =>{
 
     tvp.columns.add("idSolicitud", sql.int)
     tvp.columns.add("idArchivo", sql.int)
+    tvp.columns.add("nombreArchivo", sql.VarChar(100))
     tvp.columns.add("datos", sql.VarChar(MAX))
 
     for(const i of documents){
-        tvp.rows.add(prosepctId, i.id, i.data)
+        tvp.rows.add(prosepctId, i.id, i.name, i.data)
     }
     
     psql.input("prtIdProspecto", sql.Int, prosepctId)
