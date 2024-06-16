@@ -4,10 +4,29 @@ go
 create table sProspectos.Ctl_Documentos(
 Id int primary key not null identity (1,1),
 Descripcion varchar(50) not null,
+Extension varchar(50) not null,
 Activo bit not null default 1
 )
 
 go
+
+insert sProspectos.Ctl_Documentos(Descripcion,Extension)
+values ('Pdf', 'application/pdf'), ('Jpeg', 'image/jpeg'), ('Png','image/png')
+
+go
+
+create proc sProspectos.SP_CtlDocumentos_Get
+as
+begin
+
+	select d.Id, d.Descripcion, d.Extension 
+	from sProspectos.Ctl_Documentos d (nolock)
+	where d.Activo = 1
+		
+end--proc
+
+go
+
 create table sProspectos.Ctl_EstatusSolicitud(
 Id int primary key not null identity(1,1),
 Descripcion varchar(100) not null,
@@ -21,11 +40,24 @@ values ('Enviado'), ('Autorizado'), ('Rechazado')
 
 go
 
-select * from sProspectos.Ctl_EstatusSolicitud
+
+create proc sProspectos.SP_CtlEstatus_Get
+as
+begin
+
+	select e.Id, e.Descripcion
+	from 
+	sProspectos.Ctl_EstatusSolicitud e (nolock)
+	where e.Activo = 1
+
+end--proc
+
+go
 
 create type sProspectos.Typ_ArchivosSolicitud as table(
 idSolicitud int not null,
 idArchivo int not null,
+nombreArchivo varchar(100) not null,
 datos varchar(max) not null
 )
 
@@ -47,10 +79,12 @@ EstatusSolicitud int not null foreign key references sProspectos.Ctl_EstatusSoli
 Observaciones varchar(255) null
 )
 
+--drop table sProspectos.Solicitudes
 go
 create table sProspectos.Archivos_Prospectos(
 Id Bigint primary key not null identity(1,1),
 IdTipoDocumento int not null foreign key references sProspectos.Ctl_Documentos(Id),
+NombreArchivo varchar(100) not null,
 Datos varchar(max) not null,
 IdSolicitud int not null foreign key references sProspectos.Solicitudes(Id),
 FechaRegistro datetime not null default getdate(),
@@ -59,14 +93,17 @@ Activo bit not null default 1
 
 go
 
-create proc sProspectos.SP_Solicitudes_Get
+--drop table sProspectos.Archivos_Prospectos
+
+alter proc sProspectos.SP_Solicitudes_Get
 @prtIdSolicitud int = null
 
 as
  begin
  select s.Id, s.Nombre, s.ApellidoPaterno, s.ApellidoMaterno, s.Calle,
 		s.NumeroExterior, s.NumeroInterior, s.Colonia, s.CodigoPostal,
-		s.Telefono, s.Rfc, ss.Descripcion as EstatusProspecto
+		s.Telefono, s.Rfc, ss.id as IdEstatusProspecto, ss.Descripcion as EstatusProspecto,
+		s.Observaciones
  from sProspectos.Solicitudes s (nolock)
 	inner join sProspectos.Ctl_EstatusSolicitud ss (nolock) on ss.Id = s.EstatusSolicitud and ss.Activo = 1
  where @prtIdSolicitud is null or (@prtIdSolicitud is not null and s.Id = @prtIdSolicitud)
@@ -75,7 +112,7 @@ end--proc
 
 go
 
-create proc sProspectos.SP_Solicitudes_Set
+alter proc sProspectos.SP_Solicitudes_Set
 @prtNombre varchar(50),
 @prtApellidoPaterno varchar(50),
 @prtApellidoMaterno varchar(50) = null,
@@ -97,6 +134,18 @@ declare @IdProspecto int = 0
 
 begin try
 
+--<Validaciones>
+
+ if exists(select 1 from sProspectos.Solicitudes s (nolock)
+			where s.Nombre = @prtNombre and s.ApellidoPaterno = @prtApellidoPaterno
+			and s.ApellidoMaterno = @prtApellidoMaterno)
+ begin
+
+	set @s = 'Ya se encuentra un registro de este prospecto, verifique e intente de nuevo.'
+	raiserror(@s,16,10)
+ end--if
+
+--</Validaciones>
  
  begin tran
 
@@ -105,10 +154,9 @@ begin try
  values (@prtNombre, @prtApellidoPaterno, @prtApellidoMaterno, @prtCalle, @prtNumeroExterior, @prtNumeroInterior, @prtColonia,
 		 @prtCodigoPostal, @prtTelefono, @prtRFC, @Estatus_Solicitud_Pendiente)
 		 
- set @IdProspecto = SCOPE_IDENTITY()
-
+ 
  commit tran
-
+ set @IdProspecto = SCOPE_IDENTITY()
 
  set @prtErrNumber = @IdProspecto
  set @prtErrDescrip = 'Prospecto guardado con éxito.'
@@ -160,8 +208,8 @@ begin try
 		 
    end--if
 
-   insert sProspectos.Archivos_Prospectos (IdSolicitud, IdTipoDocumento, Datos)
-   select tp.idSolicitud, tp.idArchivo, tp.datos 
+   insert sProspectos.Archivos_Prospectos (IdSolicitud, IdTipoDocumento, NombreArchivo,  Datos)
+   select tp.idSolicitud, tp.idArchivo, tp.nombreArchivo, tp.datos 
    from @type_Documentos_Solicitud tp
 
  commit tran
@@ -188,12 +236,12 @@ end--proc
 
 go
 
-create proc sProspectos.SP_ArchivosProspecto_Get
+alter proc sProspectos.SP_ArchivosProspecto_Get
 @prtIdProspecto int
 as
 begin
 
- select ap.Id, ap.IdSolicitud as ProspectoId, ctl.Descripcion as TipoArchivo,
+ select ap.Id, ap.IdSolicitud as ProspectoId, ctl.Id as IdTipoArchivo, ap.NombreArchivo, ctl.Extension as TipoArchivo,
  ap.Datos
  from 
  sProspectos.Archivos_Prospectos ap (nolock)
@@ -204,7 +252,7 @@ end--proc
 
 go
 
-create proc sProspectos.SP_EstatusProspecto_Set
+alter proc sProspectos.SP_EstatusProspecto_Set
 @prtIdProspecto int,
 @prtIdStatus int,
 @prtObservaciones varchar(255) = null,
@@ -220,7 +268,7 @@ begin tran
 
  update s set 
  s.EstatusSolicitud = @prtIdStatus,
- s.Observaciones = case when s.Observaciones is null then @prtObservaciones else s.Observaciones end
+ s.Observaciones =  @prtObservaciones
  from sProspectos.Solicitudes s
  where s.Id = @prtIdProspecto
 
@@ -248,3 +296,7 @@ end--proc
 select * from sProspectos.Ctl_Documentos
 
 select * from sProspectos.Ctl_EstatusSolicitud
+select * from sProspectos.Solicitudes
+
+select * from sProspectos.Archivos_Prospectos
+
