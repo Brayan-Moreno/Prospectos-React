@@ -33,7 +33,7 @@ export const _app = (props) => {
         <link
           rel="shortcut icon"
           type="image/x-icon"
-          href="./icons/logo-calzzapato.svg"
+          href="./icons/code.svg"
         />
         <meta
           name="viewport"

@@ -163,12 +163,13 @@ const ProspectsList = () => {
 
   return (
     <Grid container justifyContent={'space-between'} spacing={2}>
-      <Grid item container margin={2} justifyContent={'right'}>
+      <Grid xs={12} item container margin={2} justifyContent={'right'}>
         <IconButton
           sx={{ backgroundColor: 'primary' }}
           onClick={handleCreateProspect}
           variant="contained"
           aria-label="add"
+          size='small'
         >
           <AddCircleIcon color="primary" fontSize="large" />
         </IconButton>
