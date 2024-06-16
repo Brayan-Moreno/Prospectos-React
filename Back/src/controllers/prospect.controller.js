@@ -3,6 +3,8 @@ const {
   getDocumentsProspect,
   prospectCreate,
   updateStatus,
+  getCtlDocuments,
+  getCtlStatus,
 } = require("../services/prospect.service");
 const responseTemplate = require("../utils/responseTemplate");
 const customError = require("../utils/customError");
@@ -10,7 +12,8 @@ const customError = require("../utils/customError");
 const getProspectsHandler = async (req, res, next) => {
   let response = new responseTemplate();
   try {
-    const data = await getProspect();
+    const {idProspect} = req.query
+    const data = await getProspect(idProspect);
     if (data.length === 0) {
       customError(200, "No se encontraron registros de Prospectos");
     }
@@ -29,12 +32,12 @@ const getDocumentsProspectHandler = async (req, res, next) => {
 
     const data = await getDocumentsProspect(idProspect);
 
-    if (data.length === 0) {
-      customError(
-        200,
-        "No se encontraron registros de documentos de este prospecto"
-      );
-    }
+    // if (data.length === 0) {
+    //   customError(
+    //     200,
+    //     "No se encontraron registros de documentos de este prospecto"
+    //   );
+    // }
 
     res
       .status(200)
@@ -75,9 +78,43 @@ const updateStatusHandler = async (req,res,next) =>{
     }
 }
 
+const getCtlDocumentsHandler = async (req, res, next) => {
+  let response = new responseTemplate();
+  try {
+    const data = await getCtlDocuments();
+    if (data.length === 0) {
+      customError(200, "No se encontraron registros de archivos");
+    }
+    res
+      .status(200)
+      .send(response.success(data, "Información recuperada con éxito"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCtlStatusHandler = async (req, res, next) => {
+  let response = new responseTemplate();
+  try {
+    const data = await getCtlStatus();
+    if (data.length === 0) {
+      customError(200, "No se encontraron registros de status");
+    }
+    res
+      .status(200)
+      .send(response.success(data, "Información recuperada con éxito"));
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
 module.exports = {
   getProspectsHandler,
   getDocumentsProspectHandler,
   postProspectHandler,
   updateStatusHandler,
+  getCtlDocumentsHandler,
+  getCtlStatusHandler,
 };

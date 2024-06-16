@@ -18,23 +18,44 @@ const PROSPECTS_INFO_MAPPER = {
         CodigoPostal: "zipCode",
         Telefono: "phone",
         Rfc: "rfc",
-        EstatusProspecto: "status",
+        IdEstatusProspecto: "idPipeline",
+        EstatusProspecto: "pipeline",
+        Observaciones: "observations"
     })
 }
 
 const DOCUMENTS_PROSPECT_MAPPER = {
     FROM_DB: Object.freeze({
         Id: "id",
-        TipoArchivo: "documentType",
+        ProspectoId: "idProspect",
+        IdTipoArchivo: "idFileType",
+        NombreArchivo: "name",
+        TipoArchivo: "fileType",
         Datos: "data",
     })
 }
 
+const DOCUMENTS_CATALOG_MAPPER = {
+    FROM_DB: Object.freeze({
+        Id: "id",
+        Descripcion: "description",
+        Extension: "extension",
+    })
+}
 
-const getProspects = async () =>{
+const STATUS_CATALOG_MAPPER = {
+    FROM_DB: Object.freeze({
+        Id: "id",
+        Descripcion: "description",
+    })
+}
+
+
+const getProspects = async (payload) =>{
     let response = null
     await sqlconnect
     const psql = sqldb.request()
+    psql.input("prtIdSolicitud", sql.Int, payload)
     const { recordset: result} = await psql.execute(
         "sProspectos.SP_Solicitudes_Get"
     )
@@ -75,13 +96,12 @@ const createProspect = async (payload) =>{
 
 const addDocumentsProspect = async (prosepctId, documents) =>{
     const response = { data: [], error: true, message: "" };
-
     await sqlconnect
     const psql = sqldb.request()
     const tvp = new sql.Table()
 
-    tvp.columns.add("idSolicitud", sql.int)
-    tvp.columns.add("idArchivo", sql.int)
+    tvp.columns.add("idSolicitud", sql.Int)
+    tvp.columns.add("idArchivo", sql.Int)
     tvp.columns.add("nombreArchivo", sql.VarChar(100))
     tvp.columns.add("datos", sql.VarChar(MAX))
 
@@ -91,10 +111,10 @@ const addDocumentsProspect = async (prosepctId, documents) =>{
     
     psql.input("prtIdProspecto", sql.Int, prosepctId)
     psql.input("type_Documentos_Solicitud", tvp)
-    psql.output("prtnErrNumber", sql.int);
-    psql.output("prtcErrDescrip", sql.VarChar(255));
+    psql.output("prtErrNumber", sql.int);
+    psql.output("prtErrDescrip", sql.VarChar(255));
 
-    const { output: result } = await psql.execute(
+    const {output: result} = await psql.execute(
         "sProspectos.SP_ArchivosProspecto_Set"
     )
 
@@ -145,6 +165,20 @@ const updateStatus = async (payload) =>{
     return response;
 }
 
+const getCtlDocuments = async () =>{
+    await sqlconnect
+    const psql = sqldb.request()
+    const {recordset: data} = await psql.execute ("sProspectos.SP_CtlDocumentos_Get")
+    return listMapper(data, DOCUMENTS_CATALOG_MAPPER.FROM_DB)
+}
+
+const getCtlStatus = async () =>{
+    await sqlconnect
+    const psql = sqldb.request()
+    const {recordset: data} = await psql.execute("sProspectos.SP_CtlEstatus_Get")
+    return listMapper(data, STATUS_CATALOG_MAPPER.FROM_DB);
+}
+
 
 module.exports = {
     getProspects,
@@ -152,4 +186,6 @@ module.exports = {
     addDocumentsProspect,
     getDocumentsProspect,
     updateStatus,
+    getCtlDocuments,
+    getCtlStatus,
 }

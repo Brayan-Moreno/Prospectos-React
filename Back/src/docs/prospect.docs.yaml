@@ -50,6 +50,11 @@ components:
   get:
     summary: Consulta de prospectos
     tags: [Prospect]
+    parameters:
+      - in: query
+        name: idProspect
+        schema:
+          type: integer
     responses:
       '200':
         content:
@@ -95,6 +100,50 @@ components:
                   type: string
                 error:
                   type: boolean
+
+/api/prospect/documents-catalog:
+  get:
+    summary: Consulta del catálogo de archivos
+    tags: [Prospect]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean    
+
+/api/prospect/status-catalog:
+  get:
+    summary: Consulta del catálogo de estatus
+    tags: [Prospect]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean                                  
 
 /api/prospect/create:
   post:
