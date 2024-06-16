@@ -1,0 +1,202 @@
+components:
+  schemas:
+    prospect:
+      type: object
+      properties:
+        name:
+          type: string
+        firstLastName:
+          type: string
+        secondLastName:
+          type: string
+          default: null
+        street:
+          type: string
+        internalNumber:
+          type: string
+        streetNumber:
+          type: string
+        colony:
+          type: string
+        zipCode:
+          type: string
+        phone:
+          type: string
+        rfc:
+          type: string
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              data:
+                type: string
+
+    updateStatus:
+      type: object
+      properties:
+        prospectId:
+          type: integer
+        statusId:
+          type: integer
+        observations:
+          type: string
+
+/api/prospect:
+  get:
+    summary: Consulta de prospectos
+    tags: [Prospect]
+    parameters:
+      - in: query
+        name: idProspect
+        schema:
+          type: integer
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean
+
+/api/prospect/documents:
+  get:
+    summary: Consulta de documentos de prospecto
+    tags: [Prospect]
+    parameters:
+      - in: query
+        name: idProspect
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean
+
+/api/prospect/documents-catalog:
+  get:
+    summary: Consulta del catálogo de archivos
+    tags: [Prospect]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean    
+
+/api/prospect/status-catalog:
+  get:
+    summary: Consulta del catálogo de estatus
+    tags: [Prospect]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean                                  
+
+/api/prospect/create:
+  post:
+    summary: Alta de prospecto
+    tags: [Prospect]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/prospect'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean    
+
+/api/prospect/prospect-status:
+  patch:
+    summary: Actualización de estatus de prospecto
+    tags: [Prospect]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/updateStatus'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: array
+                message:
+                  type: string
+                error:
+                  type: boolean                                
