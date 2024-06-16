@@ -29,12 +29,16 @@ import {
   TableHead,
   Pagination,
   IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material'
 
 import AddCircleIcon from '@mui/icons-material/AddCircle'
 
 //Components
 import { useFormik } from 'formik'
+
+import {StyledTableRow} from '../style/styledComponents'
 
 //Api
 import { prospectsApi } from 'api/prospects/prospects.api'
@@ -53,7 +57,12 @@ const ProspectsList = () => {
   const { open, close, isLoading } = useLoading()
   const openMenu = Boolean(anchorEl)
   const router = useRouter()
-  const headers = ['Nombre', 'Apellido Paterno', 'Apellido Materno', 'Estatus']
+
+  useEffect(() => {
+    prospectsGet()
+  }, [])
+
+  const headers = ['Nombre', 'Apellido Paterno', 'Apellido Materno', 'Estatus', 'Acciones']
 
   const handleChangePage = async (_, value) => {
     setPage(value)
@@ -64,16 +73,16 @@ const ProspectsList = () => {
     setSelectedIndex(id)
     setAnchorEl(event.target)
   }
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
 
-  useEffect(() => {
-    prospectsGet()
-  }, [])
+ 
 
   const prospectsGet = async () => {
-    open()
+    //open()
     try {
       const response = await prospectsApi.getProspect()
-      console.log(response, "response")
       if (!response.success) {
         Snack.error(response.message)
       } else {
@@ -83,7 +92,7 @@ const ProspectsList = () => {
     } catch (error) {
       Snack.error(error.message)
     }
-    close()
+    //close()
   }
 
   const renderActions = () => {
@@ -98,21 +107,24 @@ const ProspectsList = () => {
           anchorEl={anchorEl}
           open={openMenu}
           onClose={handleClose}
-          PaperProps={{
-            style: {
-              width: '20ch',
-              boxShadow: '0px 1px 0px 1px gray',
-            },
+          slotProps={{
+            paper:{
+              style: {
+                width: '20ch',
+                boxShadow: '0px 1px 0px 1px gray',
+              },
+            }
+            
           }}
         >
-          <MenuItem onClick={handleDetail}>Consultar</MenuItem>
+          <MenuItem onClick={() => handleDetail(selectedIndex)}>Consultar</MenuItem>
         </Menu>
       )
     }
   }
 
-  const handleDetail = () => {
-    router.push(`/prospects-add?id=${selectedIndex}`)
+  const handleDetail = (indice) => {
+    router.push(`/prospects-add?id=${indice}`)
     setSelectedIndex(null)
   }
 
@@ -123,13 +135,17 @@ const ProspectsList = () => {
 
   const handleChangeSelect = async (value) => {
     if (value !== null) {
-      selectedProspect(value)
+      setSelectedProspect(value)
       let newArray = [...prospects]
       if (value !== null) {
         newArray = prospects.filter(
           (x) =>
             x.name.trimEnd().trimStart().toLowerCase() ===
-            value.name.toLowerCase()
+            String(value).toLowerCase() || 
+            x.firstLastName.trimEnd().trimStart().toLowerCase() ===
+            String(value).toLowerCase() ||
+            x.secondLastName.trimEnd().trimStart().toLowerCase() ===
+            String(value).toLowerCase()
         )
         if (newArray.length > 0) {
           setProspects(newArray)
@@ -138,8 +154,10 @@ const ProspectsList = () => {
         }
       }
     } else {
-      setSelectedPromoter(null)
+      setSelectedProspect(null)
+      await prospectsGet()
       // Se hace la consulta a la APi para actualizar la tabla
+
     }
   }
 
@@ -156,7 +174,7 @@ const ProspectsList = () => {
         </IconButton>
       </Grid>
 
-      <Grid item xs={12}>
+      <Grid item xs={4}>
         <FormControl
           fullWidth
           variant="outlined"
@@ -166,7 +184,7 @@ const ProspectsList = () => {
           <Autocomplete
             freeSolo
             value={selectedProspect}
-            options={prospects.map((reg) => reg.name)}
+            options={prospects.map((reg) => `${reg.name} ${reg.firstLastName} ${reg.secondLastName}` )}
             name="promoterId"
             onChange={(event, value) => handleChangeSelect(value)}
             renderInput={(params) => (

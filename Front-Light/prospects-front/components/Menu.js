@@ -105,7 +105,7 @@ const Menu = () => {
         <Box sx={{ overflow: 'auto', marginTop: '12px' }}>
           <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={() => handleClick(true)}>
             <img
-              src={`${window.location.origin}/vercel.svg`}
+              src={`${window.location.origin}icons/vercel.svg`}
               alt=""
               style={{ width: '45px', height: '20px' }}
             />

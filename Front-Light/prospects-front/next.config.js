@@ -32,7 +32,7 @@ const {
     console.log(`isDev:${isDev} - isProd:${isProd} - isStage:${isStaging}`)
     return {
       env,
-      reactStrictMode: true,
+      reactStrictMode: false,
       swcMinify: true,
       optimizeFonts: false,
     }

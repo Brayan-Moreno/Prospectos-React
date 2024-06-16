@@ -1,24 +1,16 @@
-import React, { useState } from 'react'
-import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/router'
 
 import { useLoading } from '@hooks/useLoading'
 
-import FileUploader from '@components/FileUploader/FileUploader'
 
-import * as Yup from 'yup'
+//Resource
+import Snack from '@snack'
 
 //Material UI
 import {
-  Box,
   Grid,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Button,
-  Typography,
   FormControl,
   TextField,
   Autocomplete,
@@ -31,9 +23,15 @@ import {
   TableHead,
   Pagination,
   IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material'
 
 import ModalProspects from '@components/ModalProspects'
+import {StyledTableRow} from '../style/styledComponents'
+
+//Api
+import { prospectsApi } from 'api/prospects/prospects.api'
 
 const ProspectsEvaluation = () => {
   const [prospects, setProspects] = useState([])
@@ -48,10 +46,26 @@ const ProspectsEvaluation = () => {
   const { open, close, isLoading } = useLoading()
 
   const openMenu = Boolean(anchorEl)
-  const router = useRouter()
-  const headers = ['Nombre', 'Apellido Paterno', 'Apellido Materno', 'Estatus']
+  const headers = ['Nombre', 'Apellido Paterno', 'Apellido Materno', 'Estatus', 'Acciones']
+
+  useEffect(() =>{
+    prospectsGet()
+  },[])
 
 
+  const prospectsGet = async () => {
+    try {
+      const response = await prospectsApi.getProspect()
+      if (!response.success) {
+        Snack.error(response.message)
+      } else {
+        const prospects = [...response.data]
+        setProspects(prospects)
+      }
+    } catch (error) {
+      Snack.error(error.message)
+    }
+  }
  
 
   const handleChangePage = async (_, value) => {
@@ -64,49 +78,15 @@ const ProspectsEvaluation = () => {
     setAnchorEl(event.target)
   }
 
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
   const handleShowModal = async () => {
-    setSelectedIndex(selectedIndex)
     setShowModal(!showModal)
-    if (showModal === true) {
-      // Se consulta la api para actualizar la tabla
+    if (showModal) {
+      await prospectsGet()
     }
-  }
-  const handleChange = async (idFiles) => {
-    const files = idFiles.map((f) => {
-      return {
-        id: formik.values.id,
-      }
-    })
-    // const response = await workApplicationApi.createDocumentation(files)
-    // if (response.success) {
-    //   Snack.success('Se guardó con éxito')
-    //   setFilesUploaded(true)
-    // } else {
-    //   Snack.error(response.message)
-    // }
-  }
-
-  const handleUploadSuccess = () => {
-    setFilesUploaded(true)
-  }
-
-  function CustomTabPanel(props) {
-    const { children, value, index, ...other } = props
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`simple-tabpanel-${index}`}
-        aria-labelledby={`simple-tab-${index}`}
-        {...other}
-      >
-        {value === index && (
-          <Box sx={{ p: 3 }}>
-            <Typography>{children}</Typography>
-          </Box>
-        )}
-      </div>
-    )
   }
 
   const renderActions = () => {
@@ -121,33 +101,39 @@ const ProspectsEvaluation = () => {
           anchorEl={anchorEl}
           open={openMenu}
           onClose={handleClose}
-          PaperProps={{
-            style: {
-              width: '20ch',
-              boxShadow: '0px 1px 0px 1px gray',
-            },
+          slotProps={{
+            paper:{
+              style: {
+                width: '20ch',
+                boxShadow: '0px 1px 0px 1px gray',
+              },
+            }
+            
           }}
         >
-          <MenuItem onClick={handleDetail}>Consultar</MenuItem>
+          <MenuItem onClick={handleDetail}>Gestionar</MenuItem>
         </Menu>
       )
     }
   }
 
   const handleDetail = () => {
-    // router.push(`/prospects-add?id=${selectedIndex}`)
-    // setSelectedIndex(null)
+    handleShowModal()
   }
 
   const handleChangeSelect = async (value) => {
     if (value !== null) {
-      selectedProspect(value)
+      setSelectedProspect(value)
       let newArray = [...prospects]
       if (value !== null) {
         newArray = prospects.filter(
           (x) =>
             x.name.trimEnd().trimStart().toLowerCase() ===
-            value.name.toLowerCase()
+            String(value).toLowerCase() || 
+            x.firstLastName.trimEnd().trimStart().toLowerCase() ===
+            String(value).toLowerCase() ||
+            x.secondLastName.trimEnd().trimStart().toLowerCase() ===
+            String(value).toLowerCase()
         )
         if (newArray.length > 0) {
           setProspects(newArray)
@@ -157,13 +143,13 @@ const ProspectsEvaluation = () => {
       }
     } else {
       setSelectedProspect(null)
-      // Se hace la consulta a la APi para actualizar la tabla
+      await prospectsGet()
     }
   }
 
   return (
     <Grid container justifyContent={'space-between'} spacing={2}>
-      <Grid item xs={12}>
+      <Grid item xs={4}>
         <FormControl
           fullWidth
           variant="outlined"
@@ -173,7 +159,7 @@ const ProspectsEvaluation = () => {
           <Autocomplete
             freeSolo
             value={selectedProspect}
-            options={prospects.map((reg) => reg.name)}
+            options={prospects.map((reg) => `${reg.name}` )}
             name="promoterId"
             onChange={(event, value) => handleChangeSelect(value)}
             renderInput={(params) => (
@@ -208,7 +194,7 @@ const ProspectsEvaluation = () => {
         </FormControl>
       </Grid>
 
-      <Grid item xs={12} sx={{ margin: 2 }}>
+      <Grid item xs={12} sx={{ margin: 1 }}>
         <TableContainer
           sx={{
             borderRadius: '15px',
